@@ -96,9 +96,10 @@ class DirectedGraph:
         # original_indexer does not change under specialization; used for tracking dynamics
         self.original_indexer = self.indexer.copy()
 
-        # TODO: IS THIS CORRECT? (we aren't updating this yet, is it needed?)
-        # colors maps equitable partition colors to member indices
+        # maps equitable partition colors to member indices
         self.colors = dict()
+        self.trivial_clusters = set()
+        self.nontrivial_nodes = set(self.indices)
 
     def origination(self, i):
         """
@@ -872,12 +873,14 @@ class DirectedGraph:
         """
 
         #helper function for input driven refinement
+        # @jit
         def _refine(color_dict):
             # initialize the lists and dictionaries that we need for the input
             # driven refinement
             final_colors = {}
-            new_clusters = []
+            new_clusters = set()
             temp_new_clusters = []
+            temp_trivial_clusters = set()
             # for every cluster we examine the inputs from every other cluster
             for color1 in color_dict.keys():
                 for color2 in color_dict.keys():
@@ -886,41 +889,72 @@ class DirectedGraph:
                     sub_graph = self.A[color_dict[color1]][:,color_dict[color2]]
                     # the row sums will show the number of inputs
                     # from color2 to color1
-                    inputs = sub_graph.sum(axis=1).A1
+                    inputs = np.sum(sub_graph.toarray(), axis=1)
+                    # print(type(sub_graph))
+                    # print(type(inputs))
                     input_nums = set(inputs)
-
                     for num in input_nums:
                         cluster = np.where(inputs == num)[0]
                         # use relative indexing to find the correct nodes
                         cluster = set(color_dict[color1][cluster])
                         if cluster not in temp_new_clusters:
                             temp_new_clusters.append(cluster)
+                            if len(cluster) == 1:
+                                self.trivial_clusters.update(cluster)
+                                temp_trivial_clusters.add(tuple(cluster))
+
+            # remove trivial clusters from potential clusters
+            temp_new_clusters = {tuple(cluster - self.trivial_clusters) for cluster in temp_new_clusters}
+
+            try:
+                temp_new_clusters.remove(tuple())
+            except:
+                pass
 
             # for every node we find the smallest cluster that contains that
             # node and that is the cluster we submit for the new coloring
-            for node in self.indices:
+            for node in self.nontrivial_nodes:
                 potential = None
                 len_potential = np.inf
                 for cluster in temp_new_clusters:
                     if node in cluster and len(cluster) < len_potential:
-                        potential = cluster.copy()
+                        potential = cluster#.copy()
                         len_potential = len(potential)
-                if potential not in new_clusters:
-                    new_clusters.append(potential)
 
+                if potential not in new_clusters and potential is not None:
+                    new_clusters.add(potential)
+
+            # add trivial clusters back
+            new_clusters.update(temp_trivial_clusters)
+
+            # remove trivial clusters from nontrivial nodes for temporal improvement
+            self.nontrivial_nodes -= self.trivial_clusters
             for i, cluster in enumerate(new_clusters):
                 final_colors[i] = np.array(list(cluster))
             return final_colors
 
-
         # we begin by coloring all every node the same color
-        colors = {0 : self.indices.copy()}
+        next_colors = {0 : self.indices.copy()}
 
         # we then iteratively apply input driven refinement to coarsen
         refine = True
+        counter = 0
         while refine:
-            colors = _refine(colors)
-            #if there are no new colors then the refinement is equivalent
-            if len(colors.keys()) == len(_refine(colors).keys()):
+            counter += 1
+            colors = _refine(next_colors)
+            #if there are no new colors then the refinement is equivalent\
+            next_colors = _refine(colors)
+            if len(colors.keys()) == len(next_colors.keys()):
                 refine = False
-        return colors
+        self.colors = colors
+
+    def color_checker(self):
+        """
+        Function that can make sure our coloring is equitable.
+        """
+        for color1 in self.colors.values():
+            for color2 in self.colors.values():
+                x = np.sum(self.A[color1][:,color2],axis=1)
+                if not (x==x[0]).all():
+                    return False
+        return True
