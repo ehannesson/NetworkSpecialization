@@ -1,6 +1,7 @@
 
 # General Files ---------------------------------------------------------------
 data
+*.log
 
 # Extra Python files.
 __init__.py
