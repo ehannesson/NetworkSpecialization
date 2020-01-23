@@ -220,35 +220,10 @@ def erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
 def _erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
                           verbose=True, MPI=False):
     """
-    Generates erdos-renyi random graphs, computes the coarsest equitable
-    coloring of each, and returns the coloring statitstics.
+    Secret backend that actually does the work for erdos_renyi_colorings. This
+    is necessary to allow parallelism with MPI.
 
-    Parameters:
-        n (int): number of nodes to be used in
-
-        p (float): probability that any two given nodes are connected; this uses
-            the G(n, p) erdos-renyi scheme. If edges is specified, G(n, m) is
-            used instead and this parameter is ignored.
-
-        graphs (int): number of erdos-renyi graphs to generate and run coloring
-            statistics on
-
-        edges (int): if specified, graphs are drawn uniformly from the space of
-            all possible graphs with n nodes and m edges. In this case, the
-            parameter p is ignored.
-
-        agg (bool): If True (default), the coloring statistics are aggregated
-            together and a single dictionary is returned. Otherwise, a list of
-            dictionaries is returned, each of which contains the coloring
-            statistics for one graph.
-
-        verbose (bool): If True (default), a progress bar will be displayed.
-            Otherwise, you'll be left in the dark.
-
-    Returns:
-        color_stats: If agg=True, the statistics for each coloring are aggregated
-            and a single average statistic is returned. Otherwise, a list of the
-            coloring statistics is returned.
+    For documentation, see the docstring for erdos_renyi_colorings.
     """
     # set verbosity
     if verbose:
