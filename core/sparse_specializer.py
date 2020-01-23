@@ -30,9 +30,9 @@ class DirectedGraph:
             A(i,j) is node i receiving from node j
         n (int): the number of nodes in the graph
         dynamics (tuple (a,f)):
-            a (float): effect of node on itself
-            f (nxn matrix valued function): functional relation between each
-                of the nodes
+            a (ndarray (n,)): effect of node on itself
+            f (ndarray (n, n)): the (i, j) element should be a callable function
+                defining the dynamics of node j on node i
         labels (list(str)): list of labels assigned to the nodes of the graph
         labeler (dict(int, str)): maps indices to labels
         indexer (dict(str, int)): maps labels to indices
@@ -56,7 +56,10 @@ class DirectedGraph:
                 where A[i,j] is node i receiving from node j. If a numpy ndarray
                 is passed in, it will be converted to a scipy.sparse.csr_matrix.
 
-            TODO : what should dynamics look like???
+            dynamics (tuple (a,f)):
+                a (ndarray (n,)): effect of node on itself
+                f (ndarray (n, n)): the (i, j) element should be a callable function
+                    defining the dynamics of node j on node i
 
             Labels (list(str)): labels for the nodes of the graph, defaults to
                 0 indexing
@@ -68,7 +71,7 @@ class DirectedGraph:
         # matrix must be nxn and should not have self edges
         if n != m :
             raise ValueError('Matrix not square')
-        if np.sum(A.diagonal()) != 0:
+        if np.any(A.diagonal() != 0):
             raise ValueError('Some nodes have self edges')
 
         # define node labels if not passed in
@@ -750,13 +753,17 @@ class DirectedGraph:
             return sync_communities
 
     def network_vis(
-            self, use_eqp=False, iter_matrix=False, spec_layout=False,
-            lin=False, lin_dyn=None, title="Network Visualization",
-            save_img=False, filename='network_viz'):
+            self, node_size=750, pos=None, ax=None, arrowsize=20, use_eqp=False,
+            iter_matrix=False, spec_layout=False, lin=False, lin_dyn=None,
+            title="Network Visualization", save_img=False,
+            filename='network_viz', **kwargs):
         """
         Creates a visualization of the network G
         Parameters:
-            G (DirectedGraph): A DirectedGraph object to visualize
+            node_size (int): control the displayed node size
+            pos (dict): mapping of nodes to plotting position
+            ax (matplotlib.axes): optional axis object to plot on
+            use_eqp (bool): whether to use the equitable partition coloring
             iter_matrix (ndarray): allows you to explicitly pass in the
                 dynamics matrix of G. If left as False, then we run the
                 dynamics simulation here
@@ -769,9 +776,8 @@ class DirectedGraph:
                 'filename'
             filename (str): filename
         """
-
         if use_eqp:
-            colors = self.coloring()
+            colors = self.colors
             group_dict = {}
             for color in colors.keys():
                 for node in colors[color]:
@@ -790,15 +796,30 @@ class DirectedGraph:
         # create (and relabel) a networkx graph object
         nxG = nx.relabel.relabel_nodes(nx.DiGraph(self.A.T), self.labeler)
 
+        # if we haven't given explicit position arguments, set to something decent
+        if pos is None:
+            # check for planarity
+            if nx.algorithms.planarity.check_planarity(nxG)[0]:
+                pos = nx.drawing.planar_layout(nxG)
+            else:
+                pos = nx.drawing.spec_layout(nxG)
+
         # set community membership as an attribute of nxG
         nx.set_node_attributes(nxG, group_dict, name='community')
 
         # list of community number in order of how the nodes are stored
         colors = [group_dict[node] for node in nxG.nodes()]
 
-        plt.figure()
+        if ax is None:
+            plt.figure()
+
+        # TODO: UPDATE SPECIALIZE OR DISPLAY OR SOMETHING TO ACCOUNT FOR LINEAR WEIGHTS
 
         if lin:
+            if lin_dyn is None:
+                # use adjacency matrix
+                lin_dyn = self.A
+
             # for display of edge dynamics (linear dynamics only)
             edge_weights = nx.get_edge_attributes(nxG, 'weight')
             # edit the edge weights to be the correct dynamics
@@ -806,8 +827,6 @@ class DirectedGraph:
                 i = self.origination(self.indexer[edge[1]])
                 j = self.origination(self.indexer[edge[0]])
                 edge_weights[edge] = lin_dyn[i, j]
-
-
 
         if spec_layout:
             # draw the network
@@ -821,14 +840,11 @@ class DirectedGraph:
 
         else:
             # draw the network
-            nx.draw_networkx(nxG, pos=nx.drawing.layout.planar_layout(nxG),
-                node_size=1000, arrowsize=20, node_color=colors,
-                cmap=plt.cm.Set3)
+            nx.draw_networkx(nxG, pos=pos, node_size=node_size, ax=ax,
+            arrowsize=arrowsize, node_color=colors, cmap=plt.cm.Set3, **kwargs)
             if lin:
                 # add edge weights
-                nx.draw_networkx_edge_labels(nxG,
-                    nx.drawing.layout.planar_layout(nxG),
-                    edge_labels=edge_weights)
+                nx.draw_networkx_edge_labels(nxG, pos=pos, edge_labels=edge_weights)
 
         plt.title(title)
         if save_img:
