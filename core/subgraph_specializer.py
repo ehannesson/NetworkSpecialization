@@ -168,7 +168,6 @@ class Graph:
         S = S.tocsr()
         
         # update all the attributes
-        # labels = list(self.labeler.values()) + [None]*(num_copies-1)*spec_len
         labels = self.labels[:base_len] + [None]*num_copies*spec_len
         for i in range(num_copies):
             for j in range(spec_len):
@@ -228,7 +227,7 @@ class Graph:
             return compt_func
 
         # initialize the output array
-        F = np.empty(self.n)
+        F = [None]*self.n
 
         for i in range(self.n):
             o_i = self.original(i)
@@ -236,8 +235,10 @@ class Graph:
             # much like matrix multiplication
             F[i] = create_component_function(i, o_i)
 
-        # we return a vector valued function that can be used for iteration
-        return F
+        # return a vector valued function that can be used for iteration
+        def G(t):
+            return np.array([F[k](t) for k in range(self.n)])
+        return G
 
     def iterate(
         self, iters, initial_condition,
@@ -253,22 +254,23 @@ class Graph:
             save_img (bool): saves image with file name title if True
             title (str): filename of the image if save_img == True
         Returns:
-            t (ndarray): the states of each node at every time step
+            t (ndarray)(iters,n): the states of each node at every time
+                step
         '''
 
-        if self.F == None:
+        if np.any(self.F == None):
             t = self._linear_dynamics(iters, initial_condition)
         
         else:
             F = self._set_dynamics()
 
             # initialize an array to be of length iters
-            t = np.empty(iters)
+            t = np.zeros((iters,self.n))
             # set the initial condition
             t[0] = initial_condition
 
             for i in range(1,iters):
-                t[i] = F[t[i-1]]
+                t[i] = F(t[i-1])
             
 
             

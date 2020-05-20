@@ -61,14 +61,5 @@ if __name__ == "__main__":
 
     G = s.DirectedGraph(B, (a,f), labels=labels)
     x0 = np.random.random(G.n)
-    x0[1] = x0[2] + 1e-10
-    # G.iterate(100, x0, graph=True)
-
-    base = ['1','4', '5','6']
-    G.specialize(base)
-    # G.network_vis()
-    x0 = np.random.random(G.n)
-    x0[1] = x0[2] + 1e-10
-    G.iterate(100, np.random.random(G.n), graph=True)
-    # print(G.n)
-    # G.iterate_with_perturbations(300, np.random.random(G.n), ([150], 10), graph=True, save_img=True, title='../graphs/chaotic cgnn with perturbation')
+    G.iterate(100, x0, graph=True)
+    
