@@ -203,13 +203,33 @@ class ColorClass(LinkedList):
     def relabel(self, c):
         """Relabels the v.temp_f/v.f values of every node v in the linked list"""
         v = self.head
-        while v.next is not None:
+        if v is None:
+            raise ValueError("Color Class has no Nodes and therefore cannot be relabeled.")
+
+        while True:
             v.temp_f = c
             v.f = c
+            if v.next is None:
+                break
             v = v.next
 
     def nodes(self):
-        """Returns a list of the nodes in this ColorClass"""
+        """Returns a list of node labels for nodes in this ColorClass"""
+        data = list()
+        if self.head is None:
+            return data
+        else:
+            v = self.head
+
+        while True:
+            data.append(v.label)
+            if v.next is None:
+                return data
+
+            v = v.next
+
+    def _nodeObjects(self):
+        """Returns a list of Node objects for nodes in this ColorClass"""
         data = list()
         if self.head is None:
             return data
@@ -249,7 +269,7 @@ class ColorClass(LinkedList):
             w = w.next
             # break condition
             if w is None:
-                return
+                return C, N
 
     def splitColor(self, C, L, n_colors, new_colors):
         """
@@ -392,7 +412,7 @@ def equitablePartition(C, N):
         for c in new_colors:
             # TODO: make sure that N will be modified in place and also that
             # this is an acceptable practice (I have the feeling it may not be...)
-            C[c].computeStructureSet(C, N)
+            C, N = C[c].computeStructureSet(C, N)
 
             args = (C, L, n_colors, temp_new_colors)
             args = C[c].splitColor(*args)
@@ -407,110 +427,125 @@ def equitablePartition(C, N):
 
         # break condition
         if new_colors == set():
-            return C
+            break
+
+    # put equitable partition into dictionary form {color: nodes}
+    ep = {color: C[color].nodes() for color in range(len(C)) if C[color].size > 0}
+
+    return ep
 
 
-# def recolorDebug(C, L):
-#     """
-#     TODO: add documentation.
-#
-#     Officially recolor nodes with the largest color classes keeping their old colors.
-#     """
-#
-#     for v in L: # L is a list of vertices that got new pseudo colors
-#         # DEBUG:
-#         print(f'\n\t----- Recoloring node: {v.label} -----')
-#
-#         # remove v from old color class
-#         C[v.f].remove(v)
-#         # append v to new color class
-#         C[v.temp_f].append(v)
-#
-#         # DEBUG:
-#         print(f'\t       head/tail/color')
-#         print(f'\t            {C[v.temp_f].head.label}/{C[v.temp_f].tail.label}/{C[v.temp_f].current_color}')
-#
-#     # make sure largest new color retains old color label
-#     for c in {v.f for v in L}:
-#         d = max([(C[v.temp_f].size, v.temp_f) for v in L if v.f == c])[1]
-#         # if color d has more nodes than the original, switch their coloring
-#         if C[c].size < C[d].size:
-#             C[c].relabel(d)
-#             C[d].relabel(c)
-#             C[c], C[d] = C[d], C[c]
-#
-#     # set f = temp_f
-#     for v in L:
-#         v.f = v.temp_f
-#
-#     return C
-#
-#
-# def equitablePartitionDebug(C, N):
-#     """Finds the coarsest equitable partition of a network"""
-#     new_colors = {0}
-#     n_colors = 0
-#
-#     # DEBUG:
-#     iters = 1
-#     while True:
-#         if iters > 5:
-#             break
-#         print(f'\n---------------- Iteration {iters} ----------------')
-#         iters +=1
-#
-#         L = set()
-#         temp_new_colors = set()
-#         for c in new_colors:
-#             # DEBUG:
-#             print(f'\n    --------- Color Class {c} Loop ---------\n')
-#
-#             C[c].computeStructureSet(C, N)
-#             # DEBUG:
-#             print(f'    Structure Set (v, structure value, color class):')
-#             _nodes = [v.label for v in C[c].structure_set]
-#             _values = [v.structure_value for v in C[c].structure_set]
-#             _classes = [v.temp_f for v in C[c].structure_set]
-#             _hit = [C[v.temp_f].hit for v in C[c].structure_set]
-#             for _ in range(len(_nodes)):
-#                 print(f'\t\t{(_nodes[_], _values[_], _classes[_], _hit[_])}')
-#             # print(f'\t\t\t{[str((_nodes[_], _values[_], _classes[_])) + "\n\t\t\t" for _ in range(len(_nodes))]}')
-#
-#             args = (C, L, n_colors, temp_new_colors)
-#             args = C[c].splitColor(*args)
-#             # DEBUG: this unpacking is probably not necessary ??
-#             C, L, n_colors, temp_new_colors = args
-#
-#             # DEBUG: fairly certain we need to reset the structure values here
-#             for v in C[c].structure_set:
-#                 v.structure_value = 0
-#
-#         # DEBUG:
-#         print('\n    Nodes with new pseudo colors:')
-#         for v in L:
-#             print(f'\tNode {v.label}:\t{v.f} --> {v.temp_f}')
-#
-#         C = recolor(C, args[1])
-#         new_colors = temp_new_colors
-#
-#         # break condition
-#         if new_colors == set():
-#             return C
-#
-#         # DEBUG:
-#         print('\n  -- Color Class Nodes / Structure Values --')
-#         for _ in range(len(C)):
-#             structure_values = ''
-#             v = C[_].head
-#             if v is not None:
-#                 structure_values += str(v.structure_value)
-#                 while v.next is not None:
-#                     v = v.next
-#                     structure_values += f', {v.structure_value}'
-#             else:
-#                 structure_values = 'None'
-#
-#             print(f'\tColor Class {_} (size {C[_].size}):\t{C[_]} / {structure_values}')
-#
-#         # DEBUG:
-#         print(f'\nNew Colors: {new_colors}')
+
+
+
+def recolorDebug(C, L):
+    """
+    TODO: add documentation.
+
+    Officially recolor nodes with the largest color classes keeping their old colors.
+    """
+
+    for v in L: # L is a list of vertices that got new pseudo colors
+        # DEBUG:
+        print(f'\n\t----- Recoloring node: {v.label} -----')
+
+        # remove v from old color class
+        C[v.f].remove(v)
+        # append v to new color class
+        C[v.temp_f].append(v)
+
+        # DEBUG:
+        print(f'\t       head/tail/color')
+        print(f'\t            {C[v.temp_f].head.label}/{C[v.temp_f].tail.label}/{C[v.temp_f].current_color}')
+
+    # make sure largest new color retains old color label
+    for c in {v.f for v in L}:
+        d = max([(C[v.temp_f].size, v.temp_f) for v in L if v.f == c])[1]
+        # if color d has more nodes than the original, switch their coloring
+        if C[c].size < C[d].size:
+            C[c].relabel(d)
+            C[d].relabel(c)
+            
+            C[c], C[d] = C[d], C[c]
+
+    # set f = temp_f
+    for v in L:
+        v.f = v.temp_f
+
+    return C
+
+
+def equitablePartitionDebug(C, N):
+    """Finds the coarsest equitable partition of a network"""
+    new_colors = {0}
+    n_colors = 0
+
+    # DEBUG:
+    iters = 1
+    while True:
+        if iters > 5:
+            break
+        print(f'\n---------------- Iteration {iters} ----------------')
+        iters +=1
+
+        L = set()
+        temp_new_colors = set()
+        for c in new_colors:
+            # DEBUG:
+            print(f'\n    --------- Color Class {c} Loop ---------\n')
+
+            C, N = C[c].computeStructureSet(C, N)
+            # DEBUG:
+            print(f'    Structure Set (v, structure value, f/temp_f, hit):')
+            _nodes = [v.label for v in C[c].structure_set]
+            _values = [v.structure_value for v in C[c].structure_set]
+            _classes = [(v.f, v.temp_f) for v in C[c].structure_set]
+            _hit = [C[v.temp_f].hit for v in C[c].structure_set]
+            for _ in range(len(_nodes)):
+                print(f'\t\t({_nodes[_]}, {_values[_]}, {_classes[_][0]}/{_classes[_][1]}, {_hit[_]})')
+            # print(f'\t\t\t{[str((_nodes[_], _values[_], _classes[_])) + "\n\t\t\t" for _ in range(len(_nodes))]}')
+
+            args = (C, L, n_colors, temp_new_colors)
+            args = C[c].splitColor(*args)
+            # DEBUG: this unpacking is probably not necessary ??
+            C, L, n_colors, temp_new_colors = args
+
+            # DEBUG: fairly certain we need to reset the structure values here
+            for v in C[c].structure_set:
+                v.structure_value = 0
+
+        # DEBUG:
+        print('\n    Nodes with new pseudo colors:')
+        for v in L:
+            print(f'\tNode {v.label}:\t{v.f} --> {v.temp_f}')
+
+        C = recolor(C, args[1])
+        new_colors = temp_new_colors
+
+        # break condition
+        if new_colors == set():
+            break
+
+
+        # DEBUG:
+        print('\n  -- Color Class Nodes / Structure Values --')
+        for _ in range(len(C)):
+            structure_values = ''
+            v = C[_].head
+            if v is not None:
+                structure_values += str(v.structure_value)
+                while v.next is not None:
+                    v = v.next
+                    structure_values += f', {v.structure_value}'
+            else:
+                structure_values = 'None'
+
+            print(f'\tColor Class {_} (size {C[_].size}):\t{C[_]} / {structure_values}')
+
+        # DEBUG:
+        print(f'\nNew Colors: {new_colors}')
+
+    # put equitable partition into dictionary form {color: nodes}
+    ep = {color: C[color].nodes() for color in range(len(C)) if C[color].size > 0}
+
+    return ep
