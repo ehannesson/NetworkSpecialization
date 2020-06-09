@@ -538,17 +538,6 @@ class DirectedGraph:
         # n_nodes will keep track of the number of nodes in each branch
         n_nodes = 1
 
-        # if verbose:
-        #     print('link_opt: {}'.format(link_opt))
-        #     print('path_length: {}'.format(path_length))
-        #     print('n_nodes: {}'.format(n_nodes))
-        #     if n_nodes > 30:
-        #         cont = input('CONTINUE??')
-        #         if cont == 'y':
-        #             pass
-        #         else:
-        #             return
-
         for i in range(path_length - 1):
             _i = [self.indexer[k] for k in components[i+1]]
             _j = [self.indexer[k] for k in components[i]]
@@ -581,17 +570,6 @@ class DirectedGraph:
             n_nodes (int): number of nodes in the original graph
             components (list, list()):
         """
-        # if verbose:
-        #     if n_nodes > 30:
-        #         cont = input('CONTINUE???')
-        #         if cont is 'y':
-        #             pass
-        #         else:
-        #             return
-        #     print('path: {}'.format(path))
-        #     print('n_nodes: {}'.format(n_nodes))
-        #     print('components: '.format(components))
-
         links = []
         path_length = len(path)
 
@@ -604,8 +582,6 @@ class DirectedGraph:
                 links.append((path[i][0] + n_nodes-1, path[i][1] + n_nodes-1))
 
         return links
-
-
 
     def stability_matrix(self):
         """
@@ -890,8 +866,6 @@ class DirectedGraph:
                     # the row sums will show the number of inputs
                     # from color2 to color1
                     inputs = np.sum(sub_graph.toarray(), axis=1)
-                    # print(type(sub_graph))
-                    # print(type(inputs))
                     input_nums = set(inputs)
                     for num in input_nums:
                         cluster = np.where(inputs == num)[0]
