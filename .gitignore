@@ -1,11 +1,12 @@
 
 # General Files ---------------------------------------------------------------
 data
+*.log
 
 # Extra Python files.
 __init__.py
 __main__.py
-code/__pycache__/
+__pycache__/
 .ipynb_checkpoints/
 .vscode/
 .html
@@ -14,3 +15,4 @@ code/__pycache__/
 
 # Data Files ------------------------------------------------------------------
 data/
+TODO/
