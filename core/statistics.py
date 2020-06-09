@@ -1,5 +1,6 @@
 # plot_community_dist.py
 import pickle
+import numpy as np
 import matplotlib.pyplot as plt
 from networkx.generators import random_graphs
 import networkx as nx
