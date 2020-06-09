@@ -54,6 +54,8 @@ if __name__ == "__main__":
 
     a = np.array([zero,f1,f1,f1,f1,f1,f1,f1])
     labels = ['1','2','3','4','5','6','7','8']
+
+    
     counts = []
     for i in range(20):
         G = s.DirectedGraph(A, (a,f), labels=labels)
