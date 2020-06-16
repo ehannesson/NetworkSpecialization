@@ -410,8 +410,6 @@ def equitablePartition(C, N):
         temp_new_colors = set()
 
         for c in new_colors:
-            # TODO: make sure that N will be modified in place and also that
-            # this is an acceptable practice (I have the feeling it may not be...)
             C, N = C[c].computeStructureSet(C, N)
 
             args = (C, L, n_colors, temp_new_colors)
@@ -465,7 +463,7 @@ def recolorDebug(C, L):
         if C[c].size < C[d].size:
             C[c].relabel(d)
             C[d].relabel(c)
-            
+
             C[c], C[d] = C[d], C[c]
 
     # set f = temp_f
