@@ -8,6 +8,7 @@ Implementation based on the 1999 paper "Computing equitable partitions of graphs
 by Bastert (http://match.pmf.kg.ac.rs/electronic_versions/Match40/match40_265-272.pdf)
 """
 
+
 import operator
 
 
