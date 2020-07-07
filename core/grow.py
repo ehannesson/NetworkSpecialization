@@ -1,5 +1,8 @@
 # grow.py
 
+import copy
+
+
 import numpy as np
 import networkx as nx
 import networkx.algorithms as nxalg
@@ -36,12 +39,19 @@ class Graph(ns.Graph):
             coloring()
         """
         super().__init__(A, labels, F)
+
         self.directed = directed
 
         if self.directed:
             self.nxG = nx.DiGraph(A.T)
         else:
             self.nxG = nx.Graph(A)
+
+    def specialize(self, base):
+        """Extends base class implementation to return subclassed Graph object."""
+        G = super().specialize(base)
+
+        return Graph(G.A, G.labels, self.F, self.directed)
 
     def _select_specializing_set(self, p):
         """
@@ -80,8 +90,8 @@ class Graph(ns.Graph):
 
         Returns
         -------
-        set
-            Set of labels of nodes in the largest strongly connected component of
+        list
+            List of labels of nodes in the largest strongly connected component of
             the specializing subgraph (subset).
 
         Raises
@@ -91,7 +101,7 @@ class Graph(ns.Graph):
         """
 
         specializing_subgraph = self.nxG.subgraph(spec_set).copy()
-        return max(nx.strongly_connected_components(sub_G), key=len)
+        return list(max(nx.strongly_connected_components(specializing_subgraph), key=len))
 
     def _get_weakly_connected_specializing_set(self, spec_set):
         """
@@ -107,8 +117,8 @@ class Graph(ns.Graph):
 
         Returns
         -------
-        set
-            Set of labels of nodes in the largest weakly connected component of
+        list
+            List of labels of nodes in the largest weakly connected component of
             the specializing subgraph (subset).
 
         Raises
@@ -118,7 +128,7 @@ class Graph(ns.Graph):
         """
 
         specializing_subgraph = self.nxG.subgraph(spec_set).copy()
-        return max(nx.weakly_connected_components(sub_G), key=len)
+        return list(max(nx.weakly_connected_components(specializing_subgraph), key=len))
 
     def _get_connected_specializing_set(self, spec_set):
         """
@@ -131,8 +141,8 @@ class Graph(ns.Graph):
 
         Returns
         -------
-        set
-            Set of labels of nodes in the largest connected component of the
+        list
+            List of labels of nodes in the largest connected component of the
             specializing subgraph (subset).
 
         Raises
@@ -142,11 +152,11 @@ class Graph(ns.Graph):
         """
 
         specializing_subgraph = self.nxG.subgraph(spec_set).copy()
-        return max(nx.connected_components(sub_G), key=len)
+        return list(max(nx.connected_components(specializing_subgraph), key=len))
 
-    def _specialize_grow(self, component_type, p=0.98):
+    def _specialize_grow(self, component_type, p):
         """
-        Performs one step in the specialization-growth process.
+        Performs one iteration of the specialization-growth process.
 
         Parameters
         ----------
@@ -169,3 +179,50 @@ class Graph(ns.Graph):
             connected_spec_set = self._get_strongly_connected_specializing_set(spec_set)
         else:
             raise ValueError("`component_type` must be one of {'connected', 'weak', 'strong'}")
+
+        return self.specialize(connected_spec_set)
+
+    def specialize_grow(self, component_type, p=0.98, max_iters=10, max_n=10000):
+        """
+        Iteratively specializes the graph until reaching specified limits.
+
+        Grows the graph by calling _specialize_grow() iteratively for `max_iters`
+        iterations or until there are greater than max_n nodes.
+
+        Parameters
+        ----------
+        component_type : str {'connected', 'weak', 'strong'}
+            Specifies what type of component to use when selecting the specializing
+            set. 'Connected' is valid only for undirected graphs, while 'strong'
+            and 'weak' are valid only for directed graphs.
+
+        p : float (0<`p`<1)
+            Percent of nodes to include in the specializing set.
+
+        max_iters : int
+            Maximum number of specialization iterations.
+
+        max_n : int
+            Maximum number of nodes in the specialized graph before stopping iteration.
+
+        Returns
+        -------
+        temp_spec_graph : Graph
+            Specialized graph.
+
+        int
+            Number of iterations completed.
+        """
+
+        temp_spec_graph = self.copy()
+
+        for _ in range(max_iters):
+            temp_spec_graph = temp_spec_graph._specialize_grow(component_type, p)
+
+            if temp_spec_graph.n >= max_n:
+                return temp_spec_graph, _+1
+
+        return temp_spec_graph, max_iters
+
+    def copy(self):
+        return Graph(self.A, self.labels, self.F, self.directed)
