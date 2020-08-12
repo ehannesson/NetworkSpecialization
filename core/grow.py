@@ -18,19 +18,18 @@ class Graph(ns.Graph):
 
     def __init__(self, A, labels=None, F=None, directed=False):
         """
-        A sparse graph object with methods designed to facilitate
-            network analysis
+        A sparse graph object with methods designed to facilitate network analysis
 
         Attributes
         ----------
-            A (scipy.sparse.csr_matrix)(n,n): the sparse adjacency matrix
-                of the network. A[i,j] denotes the weight on the edge from
-                node j to node i.
-            n (int): number of nodes
-            labels (list(str)): list of labels assigned to the nodes of the
-                network
-            labeler (dict(int, str)): maps indices to labels
-            indexer (dict(str, int)): maps labels to indices
+        A (scipy.sparse.csr_matrix)(n,n): the sparse adjacency matrix
+            of the network. A[i,j] denotes the weight on the edge from
+            node j to node i.
+        n (int): number of nodes
+        labels (list(str)): list of labels assigned to the nodes of the
+            network
+        labeler (dict(int, str)): maps indices to labels
+        indexer (dict(str, int)): maps labels to indices
 
 
         Methods

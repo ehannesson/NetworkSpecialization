@@ -10,6 +10,7 @@ import sys
 import os
 from mpi4py import MPI
 
+
 def community_dist_bar(colors, title=None, logscale=True, barh=False, show=True,
                         save=False, **kwargs):
     """
@@ -83,6 +84,7 @@ def community_dist_bar(colors, title=None, logscale=True, barh=False, show=True,
     if show:
         plt.show()
 
+
 def community_dist_hist(colors, title=None, logscale=True, show=True, save=False,
                         **kwargs):
     """
@@ -147,6 +149,7 @@ def community_dist_hist(colors, title=None, logscale=True, show=True, save=False
 
     if show:
         plt.show()
+
 
 def erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
                           verbose=True, MPI=False):
@@ -217,7 +220,6 @@ def erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
                                         agg=agg, verbose=verbose)
 
 
-
 def _erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
                           verbose=True, MPI=False):
     """
@@ -274,6 +276,7 @@ def _erdos_renyi_colorings(n=100, p=0.1, graphs=10, edges=None, agg=True,
             pickle.dump(colorings, outfile)
 
     return colorings
+
 
 if __name__ == '__main__':
     args = sys.argv
